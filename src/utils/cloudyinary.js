@@ -16,9 +16,12 @@ import fs from "fs";
             const response = await cloudinary.uploader.upload(localFilePath,{
                 resource_type:"auto"
             })
-            fs.unlinkSync(localFilePath     )
+            console.log("response", response)
+            fs.unlinkSync(localFilePath)
+
             return response
         }catch(error){
+            console.log("error", error)
             fs.unlinkSync(localFilePath)
             return null;
         }
