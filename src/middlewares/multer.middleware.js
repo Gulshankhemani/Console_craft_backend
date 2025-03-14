@@ -1,14 +1,23 @@
-import multer from "multer"; 
+import multer from "multer";
 
-const storage = multer.diskStorage({
+// Image Upload Storage (Do not modify this)
+const imageStorage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, "./public/temp")
+        cb(null, "./public/temp");
     },
     filename: function (req, file, cb) {
-      cb(null,  `${parseInt(Math.random()*100)}${file.originalname}`
-      )
- } })
-  
-  export const upload = multer({ 
-    storage,
-   })
+        cb(null, `${parseInt(Math.random() * 100)}${file.originalname}`);
+    },
+});
+export const upload = multer({ storage: imageStorage });
+
+// Video Upload Storage
+const videoStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, "./public/temp"); // Temporary storage
+    },
+    filename: function (req, file, cb) {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    },
+});
+export const uploadVideoMiddleware = multer({ storage: videoStorage });
