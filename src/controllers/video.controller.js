@@ -1,25 +1,25 @@
 import mongoose, {isValidObjectId} from "mongoose"
-import {Video} from "../models/video.model.js"
+import Video from "../models/Video.models.js"
 // import {User} from "../models/user.model.js"
-import {ApiError} from "../utils/ApiError.js"
-import {ApiResponse} from "../utils/ApiResponse.js"
-import {asyncHandler} from "../utils/asyncHandler.js"
+// import ApiError from "../utils/ApiError.js"
+import {ApiResponse} from "../utils/ApiRsponse.js"
+import asyncHandler from "../utils/asyncHandler.js"
 // import {uploadOnCloudinary} from "../utils/cloudinary.js"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 1 } = req.query;  // Default to 1 video per request
-
+    const { page = 1, limit = 4 } = req.query; // Default to 4 videos to match frontend
+  
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
-
+  
     const videos = await Video.find()
-        .sort({ createdAt: -1 }) // Get the latest videos first
-        .skip((pageNumber - 1) * limitNumber) // Skip previous videos based on page
-        .limit(limitNumber); // Fetch only 1 video
-
+      .sort({ createdAt: -1 })
+      .skip((pageNumber - 1) * limitNumber)
+      .limit(limitNumber);
+  
     res.status(200).json(new ApiResponse(200, videos, "Videos fetched successfully"));
-});
+  });
 
 
 // Upload Video Function

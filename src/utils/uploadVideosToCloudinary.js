@@ -5,16 +5,12 @@ import { v2 as cloudinary } from "cloudinary";
 import { fileURLToPath } from "url";
 import ApiError from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiRsponse.js";
+import Video from "../models/Video.models.js"; // Import Video model
+import connectDB from "../db/index.js";
 
 dotenv.config();
 
-// 🛠️ Ensure Cloudinary ENV variables are loaded
-console.log("🔍 CLOUDINARY CONFIG:");
-console.log("Cloud Name:", process.env.CLOUDINARY_CLOUD_NAME);
-console.log("API Key:", process.env.CLOUDINARY_API_KEY);
-console.log("API Secret:", process.env.CLOUDINARY_API_SECRET ? "*********" : "NOT SET");
-
-// ✅ Fix: Remove `.v2` from `.config()`
+// ✅ Cloudinary Configuration
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "dcm0yakuc",
   api_key: process.env.CLOUDINARY_API_KEY || "111686871396262",
@@ -25,24 +21,40 @@ cloudinary.config({
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Fix: Ensure correct public/videos path
+// ✅ Define video folder path
 const VIDEO_FOLDER = path.join(__dirname, "../../public/videos");
 
+// Ensure the folder exists
 if (!fs.existsSync(VIDEO_FOLDER)) {
   console.log("⚠️ Folder 'public/videos' not found. Creating it...");
   fs.mkdirSync(VIDEO_FOLDER, { recursive: true });
 }
 
-// Function to upload a single video
+// ✅ Upload a single video to Cloudinary and save to MongoDB
 const uploadVideoToCloudinary = async (videoPath, fileName) => {
   try {
     console.log(`🚀 Uploading ${fileName} to Cloudinary...`);
+
     const result = await cloudinary.uploader.upload(videoPath, {
       resource_type: "video",
       folder: "videos",
     });
 
     console.log(`✅ Successfully uploaded ${fileName}: ${result.secure_url}`);
+
+    // Extract title from filename (remove extension)
+    const title = path.parse(fileName).name;
+
+    // Save video details to MongoDB
+    const newVideo = new Video({
+      title,
+      videoUrl: result.secure_url,
+      thumbnail: result.secure_url.replace("/upload/", "/upload/w_300,h_200/"), // Generate a small thumbnail
+    });
+
+    await newVideo.save();
+    console.log(`📦 Saved to DB: ${title}`);
+
     return result.secure_url;
   } catch (error) {
     console.error(`❌ Error uploading ${fileName}:`, error);
@@ -50,9 +62,10 @@ const uploadVideoToCloudinary = async (videoPath, fileName) => {
   }
 };
 
-// Function to upload all videos
+// ✅ Upload all videos from folder, save to Cloudinary & DB
 export const uploadAllVideos = async () => {
   try {
+    await connectDB();
     console.log("📂 Checking video folder...");
     const files = fs.readdirSync(VIDEO_FOLDER);
 
@@ -66,7 +79,6 @@ export const uploadAllVideos = async () => {
     for (const file of files) {
       const filePath = path.join(VIDEO_FOLDER, file);
       const videoUrl = await uploadVideoToCloudinary(filePath, file);
-
       uploadedVideos.push(videoUrl);
 
       // 🗑️ Delete local file after upload
@@ -82,5 +94,5 @@ export const uploadAllVideos = async () => {
   }
 };
 
-// ✅ Call the function to test
+// ✅ Call the function to upload all videos
 uploadAllVideos().catch((err) => console.error("❌ Upload Error:", err));
