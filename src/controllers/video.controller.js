@@ -18,7 +18,9 @@ const getAllVideos = asyncHandler(async (req, res) => {
       .skip((pageNumber - 1) * limitNumber)
       .limit(limitNumber);
   
-    res.status(200).json(new ApiResponse(200, videos, "Videos fetched successfully"));
+    res
+    .status(200)
+    .json(new ApiResponse(200, "Videos fetched successfully", videos));
   });
 
 
