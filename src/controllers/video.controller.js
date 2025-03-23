@@ -1,27 +1,38 @@
-import mongoose, {isValidObjectId} from "mongoose"
 import Video from "../models/Video.models.js"
 // import {User} from "../models/user.model.js"
-// import ApiError from "../utils/ApiError.js"
+import ApiError from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiRsponse.js"
 import asyncHandler from "../utils/asyncHandler.js"
 // import {uploadOnCloudinary} from "../utils/cloudinary.js"
 
 
-const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 4 } = req.query; // Default to 4 videos to match frontend
-  
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
-  
-    const videos = await Video.find()
-      .sort({ createdAt: -1 })
-      .skip((pageNumber - 1) * limitNumber)
-      .limit(limitNumber);
-  
-    res
+// video.controller.js
+
+const getVideoByTitle = asyncHandler(async (req, res) => {
+  const { title, page = 1, limit = 4 } = req.query; // Get title, page, and limit from query params
+
+  if (!title) {
+    throw new ApiError(400, "Title is required");
+  }
+
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
+
+  // Fetch videos matching the title (case-insensitive partial match)
+  const videos = await Video.find({ title: { $regex: title, $options: "i" } })
+    .sort({ createdAt: -1 }) // Sort by createdAt in descending order
+    .skip((pageNumber - 1) * limitNumber) // Skip for pagination
+    .limit(limitNumber); // Limit the number of results
+
+  if (!videos || videos.length === 0) {
+    throw new ApiError(404, "No videos found with this title");
+  }
+
+  res
     .status(200)
     .json(new ApiResponse(200, "Videos fetched successfully", videos));
-  });
+});
+
 
 
 // Upload Video Function
@@ -123,7 +134,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 // })
 
 export {
-    getAllVideos,
+  getVideoByTitle,
     // uploadVideo,
     // getVideoById,
     // updateVideo,
