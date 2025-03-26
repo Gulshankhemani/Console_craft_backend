@@ -3,6 +3,6 @@ import getImageByTitle from "../controllers/image.controller.js";
 
 const router = Router();
 
-router.route("/").get(getImageByTitle);
+router.route("/getImageByTitle").get(getImageByTitle);
 
 export default router;

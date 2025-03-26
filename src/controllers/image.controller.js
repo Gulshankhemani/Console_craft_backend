@@ -5,6 +5,8 @@ import asyncHandler from "../utils/asyncHandler.js"
 
 const getImageByTitle = asyncHandler(async (req, res) => {
   const { title, page = 1, limit = 6 } = req.query; // Get title, page, and limit from query params
+  console.log("req.body:", req.body); // Log the body
+  console.log("req.query:", req.query);
 
   if (!title) {
     throw new ApiError(400, "Title is required");
@@ -29,5 +31,3 @@ const getImageByTitle = asyncHandler(async (req, res) => {
 });
 
 export default getImageByTitle
-
-

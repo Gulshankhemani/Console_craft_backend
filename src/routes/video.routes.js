@@ -5,7 +5,7 @@ import { getVideoByTitle } from "../controllers/video.controller.js";
 const router = Router();
 
 // Public route - No authentication required
-router.route("/").get(getVideoByTitle);
+router.route("/getVideoByTitle").get(getVideoByTitle);
 
 // Add other routes that require authentication below
 // Example: router.use(verifyJwt); // Apply to routes below this line
