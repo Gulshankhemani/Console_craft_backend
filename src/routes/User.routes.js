@@ -8,7 +8,7 @@ import {
   getCurrentUser,
   updateAccountDetails,
   updateUserAvatar,
-  updateUserCoverImage,
+  // updateUserCoverImage,
   getUserChannelProfile,
   getWatchHistory,
 } from "../controllers/User.controller.js";
@@ -23,10 +23,10 @@ router.route("/register").post(
       name: "avatar",
       maxCount: 1,
     },
-    {
-      name: "coverImage",
-      maxCount: 1,
-    },
+    // {
+    //   name: "coverImage",
+    //   maxCount: 1,
+    // },
   ]),
   registerUser
 );
@@ -41,9 +41,9 @@ router.route("/update-account").post(verifyJwt, updateAccountDetails);
 router
   .route("/avatar")
   .patch(verifyJwt, upload.single("avatar"), updateUserAvatar);
-router
-  .route("/cover-image ")
-  .patch(verifyJwt, upload.single("coverImage"), updateUserCoverImage);
+// router
+//   .route("/cover-image ")
+//   .patch(verifyJwt, upload.single("coverImage"), updateUserCoverImage);
 
 router.route("/c/:Username").get(verifyJwt, getUserChannelProfile);
 router.route("/history").get(verifyJwt, getWatchHistory);

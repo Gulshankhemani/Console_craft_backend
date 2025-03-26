@@ -9,7 +9,7 @@ import asyncHandler from "../utils/asyncHandler.js"
 // video.controller.js
 
 const getVideoByTitle = asyncHandler(async (req, res) => {
-  const { title, page = 1, limit = 4 } = req.query; // Get title, page, and limit from query params
+  const { title, page = 1, limit = 6 } = req.query; // Get title, page, and limit from query params
 
   if (!title) {
     throw new ApiError(400, "Title is required");
