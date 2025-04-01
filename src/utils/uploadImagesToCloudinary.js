@@ -5,7 +5,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { fileURLToPath } from "url";
 import ApiError from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiRsponse.js";
-import Image from "../models/Image.models.js"; // Import Image model
+import Image from "../models/Image.models.js";
 import connectDB from "../db/index.js";
 
 dotenv.config();
@@ -30,34 +30,62 @@ if (!fs.existsSync(IMAGE_FOLDER)) {
   fs.mkdirSync(IMAGE_FOLDER, { recursive: true });
 }
 
+// ✅ Predefined product details
+const predefinedProducts = [
+  {
+    fileName: "logo.png",
+    title: "logo",
+    price: 0,
+    rating: 0,
+    reviews: "0",
+    category: "logo",
+    platform: "logo",
+    storage: "1 TB",
+    ram: "16 GB",
+  },
+];
+
 // ✅ Upload a single image to Cloudinary and save to MongoDB
-const uploadImageToCloudinary = async (imagePath, fileName) => {
+const uploadImageToCloudinary = async (imagePath, product) => {
   try {
-    console.log(`🚀 Uploading ${fileName} to Cloudinary...`);
+    console.log(`🚀 Uploading ${product.fileName} to Cloudinary...`);
 
     const result = await cloudinary.uploader.upload(imagePath, {
       resource_type: "image",
       folder: "images",
+      public_id: product.fileName.split(".")[0], // Use filename without extension as public_id
     });
 
-    console.log(`✅ Successfully uploaded ${fileName}: ${result.secure_url}`);
+    console.log(`✅ Successfully uploaded ${product.fileName}: ${result.secure_url}`);
 
-    // Extract title from filename (remove extension)
-    const title = path.parse(fileName).name;
+    // Check if the image already exists in the DB by imageUrl
+    const existingImage = await Image.findOne({ imageUrl: result.secure_url });
+    if (existingImage) {
+      console.log(`⚠️ Image already exists in DB: ${product.title}. Skipping save...`);
+      return result.secure_url; // Return the URL but skip saving to DB
+    }
 
-    // Save image details to MongoDB
+    // Save image details to MongoDB with predefined data
     const newImage = new Image({
-      title,
+      title: product.title,
       imageUrl: result.secure_url,
-      thumbnail: result.secure_url.replace("/upload/", "/upload/w_300,h_200/"), // Generate a small thumbnail
+      thumbnail: result.secure_url.replace("/upload/", "/upload/w_300,h_200/"),
+      price: product.price,
+      rating: product.rating,
+      reviews: product.reviews,
+      category: product.category,
+      platform: product.platform,
+      storage: product.storage,
+      ram: product.ram,
+      isSponsored: product.isSponsored || false,
     });
 
     await newImage.save();
-    console.log(`📦 Saved to DB: ${title}`);
+    console.log(`📦 Saved to DB: ${product.title}`);
 
     return result.secure_url;
   } catch (error) {
-    console.error(`❌ Error uploading ${fileName}:`, error);
+    console.error(`❌ Error uploading ${product.fileName}:`, error);
     throw new ApiError(500, "Error uploading image to Cloudinary");
   }
 };
@@ -82,8 +110,15 @@ export const uploadAllImages = async () => {
     let uploadedImages = [];
 
     for (const file of imageFiles) {
+      // Find the corresponding product data
+      const product = predefinedProducts.find((p) => p.fileName === file);
+      if (!product) {
+        console.log(`⚠️ No predefined data found for ${file}. Skipping...`);
+        continue;
+      }
+
       const filePath = path.join(IMAGE_FOLDER, file);
-      const imageUrl = await uploadImageToCloudinary(filePath, file);
+      const imageUrl = await uploadImageToCloudinary(filePath, product);
       uploadedImages.push(imageUrl);
 
       // 🗑️ Delete local file after upload
@@ -96,6 +131,8 @@ export const uploadAllImages = async () => {
   } catch (error) {
     console.error("❌ Error processing image uploads:", error);
     throw new ApiError(500, "Error processing image uploads");
+  } finally {
+    process.exit();
   }
 };
 
