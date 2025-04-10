@@ -26,6 +26,7 @@ import ImageRouter from "./routes/image.routes.js"
 import likeRouter from "./routes/like.route.js";
 import CommentRouter from "./routes/comment.route.js";
 import Cart from "./routes/cart.router.js"
+import payment from "./routes/payment.routes.js"
 
 //routes declaration
 app.use("/api/v1/users", UserRouter);
@@ -34,5 +35,5 @@ app.use("/api/v1/image", ImageRouter);
 app.use("/api/v1/like", likeRouter);
 app.use("/api/v1/comments", CommentRouter);
 app.use("/api/v1/cart", Cart);
-
+app.use("/api/v1/payment", payment);
 export default app;

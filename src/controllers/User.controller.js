@@ -146,9 +146,9 @@ const loginUser = asyncHandler(async (req, res) => {
   );
 
   const options = {
-    httpOnly: true,   
-    secure: false,    
-    sameSite: "lax"
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
   };
 
   return res
@@ -169,28 +169,31 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-  await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      $unset: {
-        refreshToken: 1, // this removes the field from document
+  // If user is authenticated, clear their refresh token in the database
+  if (req.user?._id) {
+    await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $unset: {
+          refreshToken: 1, // Remove refresh token field
+        },
       },
-    },
-    {
-      new: true,
-    }
-  );
+      { new: true }
+    );
+  }
 
   const options = {
     httpOnly: true,
-    secure: true,
+    secure: false, // Set to true in production with HTTPS
+    sameSite: "lax",
   };
 
+  // Clear cookies regardless of authentication status
   return res
     .status(200)
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, {}, "User logged Out"));
+    .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
@@ -276,9 +279,10 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
   // ✅ Fixed typo in `validateBeforeSvae` → Corrected it to `validateBeforeSave`
   await user.save({ validateBeforeSave: false });
 
-  return res.status(200).json(new ApiResponse(200, {}, "Password changed successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
 });
-
 
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res
@@ -364,81 +368,80 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 //     .json(new ApiResponse(200, user, "Cover Image updated successfully"));
 // });
 
-const getUserChannelProfile = asyncHandler(async(req, res) => {
-  const {Username} = req.params
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { Username } = req.params;
 
   if (!Username?.trim()) {
-      throw new ApiError(400, "username is missing")
+    throw new ApiError(400, "username is missing");
   }
 
   console.log("Searching for Username:", Username.toLowerCase());
 
   const channel = await User.aggregate([
-      {
-          $match: {
-            Username: Username?.toLowerCase()
-          }
+    {
+      $match: {
+        Username: Username?.toLowerCase(),
       },
-      {
-          $lookup: {
-              from: "subscriptions",
-              localField: "_id",
-              foreignField: "channel",
-              as: "subscribers"
-          }
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
       },
-      {
-          $lookup: {
-              from: "subscriptions",
-              localField: "_id",
-              foreignField: "subscriber",
-              as: "subscribedTo"
-          }
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo",
       },
-      {
-          $addFields: {
-              subscribersCount: {
-                  $size: "$subscribers"
-              },
-              channelsSubscribedToCount: {
-                  $size: "$subscribedTo"
-              },
-              isSubscribed: {
-                  $cond: {
-                      if: {$in: [req.user?._id, "$subscribers.subscriber"]},
-                      then: true,
-                      else: false
-                  }
-              }
-          }
+    },
+    {
+      $addFields: {
+        subscribersCount: {
+          $size: "$subscribers",
+        },
+        channelsSubscribedToCount: {
+          $size: "$subscribedTo",
+        },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
       },
-      {
-          $project: {
-              FullName: 1,
-              Username: 1,
-              subscribersCount: 1,
-              channelsSubscribedToCount: 1,
-              isSubscribed: 1,
-              avatar: 1,
-              // coverImage: 1,
-              email: 1
-
-          }
-      }
-  ])
+    },
+    {
+      $project: {
+        FullName: 1,
+        Username: 1,
+        subscribersCount: 1,
+        channelsSubscribedToCount: 1,
+        isSubscribed: 1,
+        avatar: 1,
+        // coverImage: 1,
+        email: 1,
+      },
+    },
+  ]);
 
   console.log("Channel search result:", channel);
 
   if (!channel?.length) {
-      throw new ApiError(404, "channel does not exists")
+    throw new ApiError(404, "channel does not exists");
   }
 
   return res
-  .status(200)
-  .json(
+    .status(200)
+    .json(
       new ApiResponse(200, channel[0], "User channel fetched successfully")
-  )
-})
+    );
+});
 
 const getWatchHistory = asyncHandler(async (req, res) => {
   const user = await User.aggregate([
@@ -493,8 +496,6 @@ const getWatchHistory = asyncHandler(async (req, res) => {
       )
     );
 });
-
-
 
 export {
   registerUser,
