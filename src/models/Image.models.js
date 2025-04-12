@@ -44,12 +44,12 @@ const ImageSchema = new mongoose.Schema(
     },
     storage: {
       type: String,
-      enum: ["64 GB", "128 GB", "256 GB", "512 GB", "1 TB"],
+      enum: ["64 GB", "128 GB", "256 GB", "512 GB", "1 TB","0 TB"],
       default: "1 TB",
     },
     ram: {
       type: String,
-      enum: ["4 GB", "8 GB", "16 GB", "32 GB"],
+      enum: ["4 GB", "8 GB", "16 GB", "32 GB","0 GB"],
       default: "16 GB",
     },
     isSponsored: {
