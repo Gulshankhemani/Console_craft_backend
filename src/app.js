@@ -1,39 +1,50 @@
 import express from "express";
-import cors from "cors"; //Cross-Origin Resource Sharing , middleware to enable CORS with various options
-import cookieParser from "cookie-parser";// middleware to parse cookies attached to the client request object
+import cors from "cors";
+import cookieParser from "cookie-parser";
 
-
-// Create an instance of Express application , we can use express functionality 
 const app = express();
 
-app.use(cors({
-    origin: process.env.CORS_ORIGIN,// Allow requests only from the specified origin (defined in environment variables)
-    credentials:true // Allow sending cookies with cross-origin requests
-}))
+// Parse allowed origins from environment variable
+const allowedOrigins = process.env.CORS_ORIGIN?.split(",") || [];
 
-app.use(express.json({limit: "16kb"}));
-app.use(express.urlencoded({extended:true, limit: "16kb"}));
-app.use(express.static("public"));// Middleware to serve static files (e.g., images, CSS, JavaScript) from the "public" folder
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like curl or Postman)
+      if (!origin) return callback(null, true);
 
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
+// Middleware
+app.use(express.json({ limit: "16kb" }));
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+app.use(express.static("public"));
 app.use(cookieParser());
 
-
-//routes import 
-
+// Routes import
 import UserRouter from "./routes/User.routes.js";
 import VideoRouter from "./routes/video.routes.js";
-import ImageRouter from "./routes/image.routes.js"
+import ImageRouter from "./routes/image.routes.js";
 import likeRouter from "./routes/like.route.js";
 import CommentRouter from "./routes/comment.route.js";
-import Cart from "./routes/cart.router.js"
-import payment from "./routes/payment.routes.js"
+import Cart from "./routes/cart.router.js";
+import payment from "./routes/payment.routes.js";
 
-//routes declaration
+// Routes declaration
 app.use("/api/v1/users", UserRouter);
 app.use("/api/v1/videos", VideoRouter);
 app.use("/api/v1/image", ImageRouter);
 app.use("/api/v1/like", likeRouter);
 app.use("/api/v1/comments", CommentRouter);
 app.use("/api/v1/cart", Cart);
-app.use("/api/v1/payment", payment);
+app.use("/api/v1/payment", payment);
+
 export default app;
